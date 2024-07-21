@@ -1,4 +1,4 @@
-/// Copyright (c) 2023 Kodeco Inc.
+/// Copyright (c) 2024 Kodeco Inc.
 ///
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
@@ -32,28 +32,26 @@
 
 import SwiftUI
 
-struct ContentView: View {
+struct EmotionResultView: View {
+  let emotion: String
+  let accuracy: String
+
   var body: some View {
-    NavigationView {
-      VStack {
-        Text("Welcome to MoodTracker!")
-          .font(.title)
-          .padding()
-        NavigationLink {
-          EmotionDetectionView()
-        } label: {
-          Text("Start Emotion Detection")
-            .font(.headline)
-            .padding()
-        }
-      }
+    VStack(spacing: 5) {
+      Text("Detected Emotion: \(emotion)")
+        .font(.title2)
+        .padding(.bottom)
+      Text("Accuracy: \(accuracy)")
+        .font(.subheadline)
+        .foregroundColor(.secondary)
     }
+    .padding()
+    .background(Color.blue.opacity(0.1))
+    .cornerRadius(10)
+    .shadow(radius: 10)
   }
 }
 
-
-struct ContentView_Previews: PreviewProvider {
-  static var previews: some View {
-    ContentView()
-  }
+#Preview {
+  EmotionResultView(emotion: "Happy", accuracy: "100%")
 }

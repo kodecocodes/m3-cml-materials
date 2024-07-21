@@ -34,68 +34,37 @@ import SwiftUI
 
 struct EmotionDetectionView: View {
   @State private var image: UIImage?
-  @State private var emotion: String?
-  @State private var accuracy: String?
   @State private var isShowingImagePicker = false
+  @State private var sourceType: UIImagePickerController.SourceType = .photoLibrary
+  @State private var showSourceTypeActionSheet = false
 
   var body: some View {
-    VStack {
-      if let image = image {
-        Image(uiImage: image)
-          .resizable()
-          .scaledToFit()
-          .frame(width: 300, height: 300)
-          .onTapGesture {
-            self.isShowingImagePicker = true
-          }
-          .sheet(isPresented: $isShowingImagePicker) {
-            ImagePicker(image: self.$image)
-          }
-      } else {
-        Text("Tap to Upload an Image")
-          .foregroundColor(.gray)
-          .frame(width: 300, height: 300)
-          .background(Color.black.opacity(0.1))
-          .onTapGesture {
-            self.isShowingImagePicker = true
-          }
-          .sheet(isPresented: $isShowingImagePicker) {
-            ImagePicker(image: self.$image)
-          }
-      }
+    VStack(spacing: 20) {
+      ImageDisplayView(image: $image, showSourceTypeActionSheet: $showSourceTypeActionSheet)
 
-      if let emotion = emotion {
-        Text("Detected Emotion: \(emotion)")
-          .font(.title)
-          .padding()
-      }
-
-      if let accuracy = accuracy {
-        Text("Accuracy: \(accuracy)")
-          .padding(.bottom)
-      }
-
-      Button(action: {
-        self.classifyImage()
-      }) {
-        Text("Detect Emotion")
-      }
-      .padding()
-
-      Button(action: {
-        self.image = nil
-        self.emotion = nil
-        self.accuracy = nil
-      }) {
-        Text("Upload Another Image")
-      }
-      .padding()
-      .disabled(image == nil)
+      ActionButtonsView(image: $image, reset: reset)
     }
     .navigationTitle("Emotion Detection")
+    .actionSheet(isPresented: $showSourceTypeActionSheet) {
+      ActionSheet(title: Text("Select Image Source"), message: nil, buttons: [
+        .default(Text("Camera")) {
+          self.sourceType = .camera
+          self.isShowingImagePicker = true
+        },
+        .default(Text("Photo Library")) {
+          self.sourceType = .photoLibrary
+          self.isShowingImagePicker = true
+        },
+        .cancel()
+      ])
+    }
+    .sheet(isPresented: $isShowingImagePicker) {
+      ImagePicker(image: self.$image, sourceType: self.$sourceType)
+    }
   }
-  
-  func classifyImage() {
+
+  func reset() {
+    self.image = nil
   }
 }
 

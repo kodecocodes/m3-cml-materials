@@ -40,7 +40,7 @@ struct ContentView: View {
           .font(.title)
           .padding()
         NavigationLink {
-          EmotionDetectionView()
+          
         } label: {
           Text("Start Emotion Detection")
             .font(.headline)

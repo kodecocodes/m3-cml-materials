@@ -1,4 +1,4 @@
-/// Copyright (c) 2023 Kodeco Inc.
+/// Copyright (c) 2024 Kodeco Inc.
 ///
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
@@ -32,28 +32,44 @@
 
 import SwiftUI
 
-struct ContentView: View {
+struct ActionButtonsView: View {
+  @Binding var image: UIImage?
+  var classifyImage: () -> Void
+  var reset: () -> Void
+
   var body: some View {
-    NavigationView {
-      VStack {
-        Text("Welcome to MoodTracker!")
-          .font(.title)
-          .padding()
-        NavigationLink {
-          EmotionDetectionView()
-        } label: {
-          Text("Start Emotion Detection")
+    VStack(spacing: 10) {
+      if image != nil {
+        Button(action: classifyImage) {
+          Text("Detect Emotion")
             .font(.headline)
             .padding()
+            .frame(maxWidth: .infinity)
+            .background(Color.blue)
+            .foregroundColor(.white)
+            .cornerRadius(10)
         }
+        .padding(.horizontal)
+
+        Button(action: reset) {
+          Text("Upload Another Image")
+            .font(.headline)
+            .padding()
+            .frame(maxWidth: .infinity)
+            .background(Color.red)
+            .foregroundColor(.white)
+            .cornerRadius(10)
+        }
+        .padding(.horizontal)
       }
     }
   }
 }
 
-
-struct ContentView_Previews: PreviewProvider {
-  static var previews: some View {
-    ContentView()
-  }
+#Preview {
+  ActionButtonsView(
+    image: .constant(UIImage(systemName: "photo")),
+    classifyImage: {},
+    reset: {}
+  )
 }

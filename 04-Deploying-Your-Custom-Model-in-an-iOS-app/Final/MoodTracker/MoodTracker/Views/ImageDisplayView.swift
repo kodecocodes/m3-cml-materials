@@ -1,4 +1,4 @@
-/// Copyright (c) 2023 Kodeco Inc.
+/// Copyright (c) 2024 Kodeco Inc.
 ///
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
@@ -32,28 +32,49 @@
 
 import SwiftUI
 
-struct ContentView: View {
+struct ImageDisplayView: View {
+  @Binding var image: UIImage?
+  @Binding var showSourceTypeActionSheet: Bool
+
   var body: some View {
-    NavigationView {
-      VStack {
-        Text("Welcome to MoodTracker!")
-          .font(.title)
+    Group {
+      if let image = image {
+        Image(uiImage: image)
+          .resizable()
+          .scaledToFit()
+          .frame(maxWidth: .infinity, maxHeight: 300)
+          .cornerRadius(10)
+          .shadow(radius: 10)
+          .onTapGesture {
+            self.showSourceTypeActionSheet = true
+          }
           .padding()
-        NavigationLink {
-          EmotionDetectionView()
-        } label: {
-          Text("Start Emotion Detection")
-            .font(.headline)
-            .padding()
+      } else {
+        VStack(spacing: 10) {
+          Image(systemName: "photo.on.rectangle")
+            .resizable()
+            .scaledToFit()
+            .frame(width: 100, height: 100)
+            .foregroundColor(.gray)
+          Text("Tap to Select an Image")
+            .foregroundColor(.gray)
         }
+        .frame(maxWidth: .infinity, maxHeight: 300)
+        .background(Color.black.opacity(0.1))
+        .cornerRadius(10)
+        .shadow(radius: 10)
+        .onTapGesture {
+          self.showSourceTypeActionSheet = true
+        }
+        .padding()
       }
     }
   }
 }
 
-
-struct ContentView_Previews: PreviewProvider {
-  static var previews: some View {
-    ContentView()
-  }
+#Preview {
+  ImageDisplayView(
+    image: .constant(nil),
+    showSourceTypeActionSheet: .constant(false)
+  )
 }
