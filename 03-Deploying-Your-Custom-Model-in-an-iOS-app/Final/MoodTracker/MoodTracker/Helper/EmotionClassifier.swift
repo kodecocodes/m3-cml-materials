@@ -39,7 +39,7 @@ class EmotionClassifier {
 
   init() {
     let configuration = MLModelConfiguration()
-    guard let mlModel = try? EmotionClassifierModel(configuration: configuration).model else {
+    guard let mlModel = try? EmotionsImageClassifier(configuration: configuration).model else {
       fatalError("Failed to load model")
     }
     self.model = try! VNCoreMLModel(for: mlModel)
@@ -52,13 +52,35 @@ class EmotionClassifier {
     }
 
     let request = VNCoreMLRequest(model: model) { request, error in
-      guard let results = request.results as? [VNClassificationObservation],
-            let topResult = results.first else {
+      if let error = error {
+        print("Error during classification: \(error.localizedDescription)")
         completion(nil, nil)
         return
       }
 
-      completion(topResult.identifier, topResult.confidence)
+      guard let results = request.results as? [VNClassificationObservation] else {
+        print("No results found")
+        completion(nil, nil)
+        return
+      }
+
+      for result in results {
+        print("Identifier: \(result.identifier), Confidence: \(result.confidence)")
+      }
+
+      let topResult = results.max(by: { a, b in a.confidence < b.confidence })
+
+      for result in results {
+          print("Identifier: \(result.identifier), Confidence: \(result.confidence)")
+      }
+
+      guard let bestResult = topResult else {
+          print("No top result found")
+          completion(nil, nil)
+          return
+      }
+
+      completion(bestResult.identifier, bestResult.confidence)
     }
 
     let handler = VNImageRequestHandler(ciImage: ciImage)
