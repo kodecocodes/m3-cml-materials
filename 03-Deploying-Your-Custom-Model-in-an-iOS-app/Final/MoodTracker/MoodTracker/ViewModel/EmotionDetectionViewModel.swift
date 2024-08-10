@@ -31,44 +31,45 @@
 /// THE SOFTWARE.
 
 import SwiftUI
+import Combine
 
-struct EmotionDetectionView: View {
-    @StateObject private var viewModel = EmotionDetectionViewModel()
-    @State private var isShowingImagePicker = false
-    @State private var sourceType: UIImagePickerController.SourceType = .photoLibrary
-    @State private var showSourceTypeActionSheet = false
+class EmotionDetectionViewModel: ObservableObject {
+  @Published var image: UIImage?
+  @Published var emotion: String?
+  @Published var accuracy: String?
 
-    var body: some View {
-        VStack(spacing: 20) {
-            ImageDisplayView(image: $viewModel.image, showSourceTypeActionSheet: $showSourceTypeActionSheet)
+  private let classifier = EmotionClassifier()
 
-            if let emotion = viewModel.emotion, let accuracy = viewModel.accuracy {
-                EmotionResultView(emotion: emotion, accuracy: accuracy)
-            }
-
-            ActionButtonsView(image: $viewModel.image, classifyImage: viewModel.classifyImage, reset: viewModel.reset)
+  func classifyImage() {
+    if let image = self.image {
+      // Resize the image before classification
+      let resizedImage = resizeImage(image)
+      DispatchQueue.global(qos: .userInteractive).async {
+        self.classifier.classify(image: resizedImage ?? image) { [weak self] emotion, confidence in
+          // Update the published properties on the main thread
+          DispatchQueue.main.async {
+            self?.emotion = emotion ?? "Unknown"
+            self?.accuracy = String(format: "%.2f%%", (confidence ?? 0) * 100.0)
+          }
         }
-        .navigationTitle("Emotion Detection")
-        .actionSheet(isPresented: $showSourceTypeActionSheet) {
-            ActionSheet(title: Text("Select Image Source"), message: nil, buttons: [
-                .default(Text("Camera")) {
-                    self.sourceType = .camera
-                    self.isShowingImagePicker = true
-                },
-                .default(Text("Photo Library")) {
-                    self.sourceType = .photoLibrary
-                    self.isShowingImagePicker = true
-                },
-                .cancel()
-            ])
-        }
-        .sheet(isPresented: $isShowingImagePicker) {
-            ImagePicker(image: self.$viewModel.image, sourceType: self.$sourceType)
-        }
+      }
     }
-}
+  }
 
-#Preview {
-    EmotionDetectionView()
+  func reset() {
+    DispatchQueue.main.async {
+      self.image = nil
+      self.emotion = nil
+      self.accuracy = nil
+    }
+  }
+
+  private func resizeImage(_ image: UIImage) -> UIImage? {
+    UIGraphicsBeginImageContext(CGSize(width: 224, height: 224))
+    image.draw(in: CGRect(x: 0, y: 0, width: 224, height: 224))
+    let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
+    UIGraphicsEndImageContext()
+    return resizedImage
+  }
 }
 
