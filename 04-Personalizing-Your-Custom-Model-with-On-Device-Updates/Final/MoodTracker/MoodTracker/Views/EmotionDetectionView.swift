@@ -32,44 +32,61 @@
 
 import SwiftUI
 
-struct ActionButtonsView: View {
-  @Binding var image: UIImage?
-  var classifyImage: () -> Void
-  var reset: () -> Void
+struct EmotionDetectionView: View {
+  @StateObject private var viewModel = EmotionDetectionViewModel()
+  @State private var isShowingImagePicker = false
+  @State private var sourceType: UIImagePickerController.SourceType = .photoLibrary
+  @State private var showSourceTypeActionSheet = false
+  @State private var feedbackLabel: String = ""  // New state for user feedback
 
   var body: some View {
-    VStack(spacing: 10) {
-      if image != nil {
-        Button(action: classifyImage) {
-          Text("Detect Emotion")
-            .font(.headline)
-            .padding()
-            .frame(maxWidth: .infinity)
-            .background(Color.blue)
-            .foregroundColor(.white)
-            .cornerRadius(10)
-        }
-        .padding(.horizontal)
+    VStack(spacing: 20) {
+      ImageDisplayView(image: $viewModel.image, showSourceTypeActionSheet: $showSourceTypeActionSheet)
 
-        Button(action: reset) {
-          Text("Select Another Image")
-            .font(.headline)
-            .padding()
-            .frame(maxWidth: .infinity)
-            .background(Color.red)
-            .foregroundColor(.white)
-            .cornerRadius(10)
+      if let emotion = viewModel.emotion, let accuracy = viewModel.accuracy {
+        EmotionResultView(emotion: emotion, accuracy: accuracy)
+
+        TextField("Enter Correct Label", text: $feedbackLabel)
+          .textFieldStyle(RoundedBorderTextFieldStyle())
+          .padding()
+
+        Button("Update Model with Correct Label") {
+          if let image = viewModel.image {
+            viewModel.updateModel(with: image, label: feedbackLabel)
+          }
         }
-        .padding(.horizontal)
+        .disabled(feedbackLabel.isEmpty || viewModel.isModelUpdating)
+        .padding()
+
+        if viewModel.isModelUpdating {
+          ProgressView("Updating Model...")
+        }
       }
+
+      ActionButtonsView(image: $viewModel.image, classifyImage: viewModel.classifyImage, reset: viewModel.reset)
+    }
+    .navigationTitle("Emotion Detection")
+    .actionSheet(isPresented: $showSourceTypeActionSheet) {
+      ActionSheet(title: Text("Select Image Source"), message: nil, buttons: [
+        .default(Text("Camera")) {
+          self.sourceType = .camera
+          self.isShowingImagePicker = true
+        },
+        .default(Text("Photo Library")) {
+          self.sourceType = .photoLibrary
+          self.isShowingImagePicker = true
+        },
+        .cancel()
+      ])
+    }
+    .sheet(isPresented: $isShowingImagePicker) {
+      ImagePicker(image: self.$viewModel.image, sourceType: self.$sourceType)
     }
   }
 }
 
+
 #Preview {
-  ActionButtonsView(
-    image: .constant(UIImage(systemName: "photo")),
-    classifyImage: {},
-    reset: {}
-  )
+  EmotionDetectionView()
 }
+

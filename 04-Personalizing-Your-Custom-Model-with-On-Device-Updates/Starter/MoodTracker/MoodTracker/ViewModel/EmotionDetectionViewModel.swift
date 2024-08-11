@@ -31,45 +31,45 @@
 /// THE SOFTWARE.
 
 import SwiftUI
+import Combine
 
-struct ActionButtonsView: View {
-  @Binding var image: UIImage?
-  var classifyImage: () -> Void
-  var reset: () -> Void
+class EmotionDetectionViewModel: ObservableObject {
+  @Published var image: UIImage?
+  @Published var emotion: String?
+  @Published var accuracy: String?
 
-  var body: some View {
-    VStack(spacing: 10) {
-      if image != nil {
-        Button(action: classifyImage) {
-          Text("Detect Emotion")
-            .font(.headline)
-            .padding()
-            .frame(maxWidth: .infinity)
-            .background(Color.blue)
-            .foregroundColor(.white)
-            .cornerRadius(10)
+  private let classifier = EmotionClassifier()
+
+  func classifyImage() {
+    if let image = self.image {
+      // Resize the image before classification
+      let resizedImage = resizeImage(image)
+      DispatchQueue.global(qos: .userInteractive).async {
+        self.classifier.classify(image: resizedImage ?? image) { [weak self] emotion, confidence in
+          // Update the published properties on the main thread
+          DispatchQueue.main.async {
+            self?.emotion = emotion ?? "Unknown"
+            self?.accuracy = String(format: "%.2f%%", (confidence ?? 0) * 100.0)
+          }
         }
-        .padding(.horizontal)
-
-        Button(action: reset) {
-          Text("Select Another Image")
-            .font(.headline)
-            .padding()
-            .frame(maxWidth: .infinity)
-            .background(Color.red)
-            .foregroundColor(.white)
-            .cornerRadius(10)
-        }
-        .padding(.horizontal)
       }
     }
   }
+
+  func reset() {
+    DispatchQueue.main.async {
+      self.image = nil
+      self.emotion = nil
+      self.accuracy = nil
+    }
+  }
+
+  private func resizeImage(_ image: UIImage) -> UIImage? {
+    UIGraphicsBeginImageContext(CGSize(width: 224, height: 224))
+    image.draw(in: CGRect(x: 0, y: 0, width: 224, height: 224))
+    let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
+    UIGraphicsEndImageContext()
+    return resizedImage
+  }
 }
 
-#Preview {
-  ActionButtonsView(
-    image: .constant(UIImage(systemName: "photo")),
-    classifyImage: {},
-    reset: {}
-  )
-}

@@ -31,45 +31,59 @@
 /// THE SOFTWARE.
 
 import SwiftUI
+import Combine
 
-struct ActionButtonsView: View {
-  @Binding var image: UIImage?
-  var classifyImage: () -> Void
-  var reset: () -> Void
+class EmotionDetectionViewModel: ObservableObject {
+  @Published var image: UIImage?
+  @Published var emotion: String?
+  @Published var accuracy: String?
+  @Published var isModelUpdating: Bool = false  // Track if the model is being updated
 
-  var body: some View {
-    VStack(spacing: 10) {
-      if image != nil {
-        Button(action: classifyImage) {
-          Text("Detect Emotion")
-            .font(.headline)
-            .padding()
-            .frame(maxWidth: .infinity)
-            .background(Color.blue)
-            .foregroundColor(.white)
-            .cornerRadius(10)
+  private var classifier = EmotionClassifier()
+
+  func classifyImage() {
+    if let image = self.image {
+      let resizedImage = resizeImage(image)
+      DispatchQueue.global(qos: .userInteractive).async {
+        self.classifier.classify(image: resizedImage ?? image) { [weak self] emotion, confidence in
+          DispatchQueue.main.async {
+            self?.emotion = emotion ?? "Unknown"
+            self?.accuracy = String(format: "%.2f%%", (confidence ?? 0) * 100.0)
+          }
         }
-        .padding(.horizontal)
-
-        Button(action: reset) {
-          Text("Select Another Image")
-            .font(.headline)
-            .padding()
-            .frame(maxWidth: .infinity)
-            .background(Color.red)
-            .foregroundColor(.white)
-            .cornerRadius(10)
-        }
-        .padding(.horizontal)
       }
     }
   }
+
+  func reset() {
+    DispatchQueue.main.async {
+      self.image = nil
+      self.emotion = nil
+      self.accuracy = nil
+    }
+  }
+
+  func updateModel(with image: UIImage, label: String) {
+    isModelUpdating = true
+    classifier.retrainModel(with: image, label: label) { [weak self] success in
+      DispatchQueue.main.async {
+        self?.isModelUpdating = false
+        if success {
+          print("Model updated successfully!")
+        } else {
+          print("Model update failed.")
+        }
+      }
+    }
+  }
+
+  private func resizeImage(_ image: UIImage) -> UIImage? {
+    UIGraphicsBeginImageContext(CGSize(width: 224, height: 224))
+    image.draw(in: CGRect(x: 0, y: 0, width: 224, height: 224))
+    let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
+    UIGraphicsEndImageContext()
+    return resizedImage
+  }
 }
 
-#Preview {
-  ActionButtonsView(
-    image: .constant(UIImage(systemName: "photo")),
-    classifyImage: {},
-    reset: {}
-  )
-}
+

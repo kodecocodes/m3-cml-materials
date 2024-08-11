@@ -31,45 +31,62 @@
 /// THE SOFTWARE.
 
 import SwiftUI
+import Vision
+import CoreML
 
-struct ActionButtonsView: View {
-  @Binding var image: UIImage?
-  var classifyImage: () -> Void
-  var reset: () -> Void
+class EmotionClassifier {
+  private var model: VNCoreMLModel
 
-  var body: some View {
-    VStack(spacing: 10) {
-      if image != nil {
-        Button(action: classifyImage) {
-          Text("Detect Emotion")
-            .font(.headline)
-            .padding()
-            .frame(maxWidth: .infinity)
-            .background(Color.blue)
-            .foregroundColor(.white)
-            .cornerRadius(10)
-        }
-        .padding(.horizontal)
+  init() {
+    let configuration = MLModelConfiguration()
+    guard let mlModel = try? EmotionsImageClassifier(configuration: configuration).model else {
+      fatalError("Failed to load model")
+    }
+    self.model = try! VNCoreMLModel(for: mlModel)
+  }
 
-        Button(action: reset) {
-          Text("Select Another Image")
-            .font(.headline)
-            .padding()
-            .frame(maxWidth: .infinity)
-            .background(Color.red)
-            .foregroundColor(.white)
-            .cornerRadius(10)
-        }
-        .padding(.horizontal)
+  func classify(image: UIImage, completion: @escaping (String?, Float?) -> Void) {
+    guard let ciImage = CIImage(image: image) else {
+      completion(nil, nil)
+      return
+    }
+
+    let request = VNCoreMLRequest(model: model) { request, error in
+      if let error = error {
+        print("Error during classification: \(error.localizedDescription)")
+        completion(nil, nil)
+        return
       }
+
+      guard let results = request.results as? [VNClassificationObservation] else {
+        completion(nil, nil)
+        return
+      }
+
+      let topResult = results.max(by: { a, b in a.confidence < b.confidence })
+      completion(topResult?.identifier, topResult?.confidence)
+    }
+
+    let handler = VNImageRequestHandler(ciImage: ciImage)
+    DispatchQueue.global(qos: .userInteractive).async {
+      do {
+        try handler.perform([request])
+      } catch {
+        completion(nil, nil)
+      }
+    }
+  }
+
+  func retrainModel(with image: UIImage, label: String, completion: @escaping (Bool) -> Void) {
+    // Pseudo-code for retraining the model on-device
+    // Actual implementation will vary based on tools like Core ML or Create ML
+    DispatchQueue.global(qos: .background).async {
+      // Perform retraining here
+      let success = true  // Replace with actual success/failure of retraining
+      completion(success)
     }
   }
 }
 
-#Preview {
-  ActionButtonsView(
-    image: .constant(UIImage(systemName: "photo")),
-    classifyImage: {},
-    reset: {}
-  )
-}
+
+

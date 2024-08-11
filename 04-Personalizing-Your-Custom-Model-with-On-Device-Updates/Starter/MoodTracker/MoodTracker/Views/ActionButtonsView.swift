@@ -52,7 +52,7 @@ struct ActionButtonsView: View {
         .padding(.horizontal)
 
         Button(action: reset) {
-          Text("Select Another Image")
+          Text("Upload Another Image")
             .font(.headline)
             .padding()
             .frame(maxWidth: .infinity)
