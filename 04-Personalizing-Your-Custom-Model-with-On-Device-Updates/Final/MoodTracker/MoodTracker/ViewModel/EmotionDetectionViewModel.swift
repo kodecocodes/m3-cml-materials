@@ -32,15 +32,22 @@
 
 import SwiftUI
 import Combine
+import CoreML
+import Vision
 
 class EmotionDetectionViewModel: ObservableObject {
   @Published var image: UIImage?
   @Published var emotion: String?
   @Published var accuracy: String?
-  @Published var isModelUpdating: Bool = false  // Track if the model is being updated
+  @Published var isModelUpdating: Bool = false
 
-  private var classifier = EmotionClassifier()
+  private let classifier: EmotionClassifier
 
+  init(classifier: EmotionClassifier = EmotionClassifier()) {
+    self.classifier = classifier
+  }
+
+  // Function to classify an image and update the emotion and accuracy properties
   func classifyImage() {
     if let image = self.image {
       let resizedImage = resizeImage(image)
@@ -55,6 +62,7 @@ class EmotionDetectionViewModel: ObservableObject {
     }
   }
 
+  // Reset the image, emotion, and accuracy to initial state
   func reset() {
     DispatchQueue.main.async {
       self.image = nil
@@ -63,20 +71,7 @@ class EmotionDetectionViewModel: ObservableObject {
     }
   }
 
-  func updateModel(with image: UIImage, label: String) {
-    isModelUpdating = true
-    classifier.retrainModel(with: image, label: label) { [weak self] success in
-      DispatchQueue.main.async {
-        self?.isModelUpdating = false
-        if success {
-          print("Model updated successfully!")
-        } else {
-          print("Model update failed.")
-        }
-      }
-    }
-  }
-
+  // Resize the image to 224x224 pixels to match model input requirements
   private func resizeImage(_ image: UIImage) -> UIImage? {
     UIGraphicsBeginImageContext(CGSize(width: 224, height: 224))
     image.draw(in: CGRect(x: 0, y: 0, width: 224, height: 224))
@@ -84,6 +79,100 @@ class EmotionDetectionViewModel: ObservableObject {
     UIGraphicsEndImageContext()
     return resizedImage
   }
+
+  // MARK: - Personalizing Model Updates
+
+  // New method to handle model updates with user-provided label
+  func updateModel(with image: UIImage, label: String) {
+    isModelUpdating = true
+    DispatchQueue.global(qos: .userInitiated).async {
+      self.executeUpdateTask(with: [(image, label)])
+      DispatchQueue.main.async {
+        self.isModelUpdating = false
+      }
+    }
+  }
+
+  // Execute the update task with provided samples
+  func executeUpdateTask(with samples: [(UIImage, String)]) {
+    guard let trainingData = prepareUpdateData(with: samples),
+          let updateTask = createUpdateTask(with: trainingData) else {
+      print("Failed to create update task.")
+      return
+    }
+
+    updateTask.resume()
+  }
+
+  // Prepare the training data for model updates
+  func prepareUpdateData(with samples: [(UIImage, String)]) -> MLBatchProvider? {
+    var featureProviders = [MLFeatureProvider]()
+    let inputName = "image"
+    let outputName = "target"
+
+    for sample in samples {
+      guard let resizedImage = resizeImage(sample.0),
+            let imageData = resizedImage.pngData() else { continue }
+
+      let imageURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString + ".png")
+      do {
+        try imageData.write(to: imageURL)
+      } catch {
+        print("Failed to write image data to URL: \(error)")
+        continue
+      }
+
+      guard let classifierConstraint = classifier.imageConstraint, let inputValue = try? MLFeatureValue(imageAt: imageURL, constraint: classifierConstraint) else { continue }
+      let outputValue = MLFeatureValue(string: sample.1)
+
+      let dataPointFeatures: [String: MLFeatureValue] = [inputName: inputValue, outputName: outputValue]
+
+      if let provider = try? MLDictionaryFeatureProvider(dictionary: dataPointFeatures) {
+        featureProviders.append(provider)
+      }
+    }
+
+    return featureProviders.isEmpty ? nil : MLArrayBatchProvider(array: featureProviders)
+  }
+
+  // Create an update task for the model with the provided data
+  func createUpdateTask(with data: MLBatchProvider) -> MLUpdateTask? {
+    let modelURL = Bundle.main.url(forResource: "EmotionsImageClassifier", withExtension: "mlmodelc") ?? EmotionsImageClassifier.urlOfModelInThisBundle
+
+    do {
+      let updateTask = try MLUpdateTask(forModelAt: modelURL, trainingData: data, configuration: nil, completionHandler: { context in
+        let updatedModel = context.model
+        self.saveUpdatedModel(updatedModel)
+      })
+      return updateTask
+    } catch {
+      print("Error creating update task: \(error.localizedDescription)")
+      print("Error details: \(error)")
+      return nil
+    }
+  }
+
+
+  // Save the updated model to the app's documents directory
+  func saveUpdatedModel(_ updatedModel: MLModel) {
+    let fileManager = FileManager.default
+    let updatedModelURL = getDocumentsDirectory().appendingPathComponent("UpdatedModel.mlmodelc")
+
+    do {
+      let compiledModelURL = try MLModel.compileModel(at: updatedModelURL)
+      if fileManager.fileExists(atPath: compiledModelURL.path) {
+        _ = try fileManager.replaceItemAt(updatedModelURL, withItemAt: compiledModelURL)
+      } else {
+        try fileManager.moveItem(at: compiledModelURL, to: updatedModelURL)
+      }
+      print("Updated model saved to: \(updatedModelURL.path)")
+    } catch {
+      print("Could not save the updated model: \(error)")
+    }
+  }
+
+  // Get the URL for the app's documents directory
+  private func getDocumentsDirectory() -> URL {
+    return FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+  }
 }
-
-

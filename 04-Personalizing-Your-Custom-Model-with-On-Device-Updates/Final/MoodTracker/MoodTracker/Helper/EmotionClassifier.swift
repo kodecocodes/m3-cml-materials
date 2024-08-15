@@ -35,58 +35,93 @@ import Vision
 import CoreML
 
 class EmotionClassifier {
-  private var model: VNCoreMLModel
+    private(set) var emotionsImageClassifier: EmotionsImageClassifier
+    private(set) var model: VNCoreMLModel
 
-  init() {
-    let configuration = MLModelConfiguration()
-    guard let mlModel = try? EmotionsImageClassifier(configuration: configuration).model else {
-      fatalError("Failed to load model")
-    }
-    self.model = try! VNCoreMLModel(for: mlModel)
-  }
+    /// Returns the image constraint for the model's "inputFeature" input feature.
+    var imageConstraint: MLImageConstraint? {
+        let description = emotionsImageClassifier.model.modelDescription
 
-  func classify(image: UIImage, completion: @escaping (String?, Float?) -> Void) {
-    guard let ciImage = CIImage(image: image) else {
-      completion(nil, nil)
-      return
-    }
+        // Ensure this matches the actual input feature name in your model
+        let inputName = "image"
+        guard let imageInputDescription = description.inputDescriptionsByName[inputName] else {
+            print("Input feature \(inputName) not found in model description.")
+            return nil
+        }
 
-    let request = VNCoreMLRequest(model: model) { request, error in
-      if let error = error {
-        print("Error during classification: \(error.localizedDescription)")
-        completion(nil, nil)
-        return
-      }
-
-      guard let results = request.results as? [VNClassificationObservation] else {
-        completion(nil, nil)
-        return
-      }
-
-      let topResult = results.max(by: { a, b in a.confidence < b.confidence })
-      completion(topResult?.identifier, topResult?.confidence)
+        return imageInputDescription.imageConstraint
     }
 
-    let handler = VNImageRequestHandler(ciImage: ciImage)
-    DispatchQueue.global(qos: .userInteractive).async {
-      do {
-        try handler.perform([request])
-      } catch {
-        completion(nil, nil)
-      }
+    init() {
+        let configuration = MLModelConfiguration()
+        if let classifier = EmotionClassifier.loadUpdatedModel() {
+            self.emotionsImageClassifier = classifier
+            self.model = try! VNCoreMLModel(for: classifier.model)
+        } else {
+            guard let classifier = try? EmotionsImageClassifier(configuration: configuration) else {
+                fatalError("Failed to load model")
+            }
+            self.emotionsImageClassifier = classifier
+            self.model = try! VNCoreMLModel(for: classifier.model)
+        }
     }
-  }
 
-  func retrainModel(with image: UIImage, label: String, completion: @escaping (Bool) -> Void) {
-    // Pseudo-code for retraining the model on-device
-    // Actual implementation will vary based on tools like Core ML or Create ML
-    DispatchQueue.global(qos: .background).async {
-      // Perform retraining here
-      let success = true  // Replace with actual success/failure of retraining
-      completion(success)
+    // Classify the image and return the result in a completion handler
+    func classify(image: UIImage, completion: @escaping (String?, Float?) -> Void) {
+        guard let ciImage = CIImage(image: image) else {
+            completion(nil, nil)
+            return
+        }
+
+        let request = VNCoreMLRequest(model: model) { request, error in
+            if let error = error {
+                print("Error during classification: \(error.localizedDescription)")
+                completion(nil, nil)
+                return
+            }
+
+            guard let results = request.results as? [VNClassificationObservation] else {
+                print("No results found")
+                completion(nil, nil)
+                return
+            }
+
+            let topResult = results.max(by: { a, b in a.confidence < b.confidence })
+            guard let bestResult = topResult else {
+                print("No top result found")
+                completion(nil, nil)
+                return
+            }
+
+            completion(bestResult.identifier, bestResult.confidence)
+        }
+
+        let handler = VNImageRequestHandler(ciImage: ciImage)
+
+        DispatchQueue.global(qos: .userInteractive).async {
+            do {
+                try handler.perform([request])
+            } catch {
+                print("Failed to perform classification: \(error.localizedDescription)")
+                completion(nil, nil)
+            }
+        }
     }
-  }
+
+    // Load the updated model from the documents directory if available
+    static func loadUpdatedModel() -> EmotionsImageClassifier? {
+        let updatedModelURL = getDocumentsDirectory().appendingPathComponent("UpdatedModel.mlmodelc")
+        guard FileManager.default.fileExists(atPath: updatedModelURL.path),
+              let updatedModel = try? EmotionsImageClassifier(contentsOf: updatedModelURL) else {
+            print("Failed to load the updated model.")
+            return nil
+        }
+
+        return updatedModel
+    }
+
+    // Get the URL for the app's documents directory
+    private static func getDocumentsDirectory() -> URL {
+        return FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+    }
 }
-
-
-
