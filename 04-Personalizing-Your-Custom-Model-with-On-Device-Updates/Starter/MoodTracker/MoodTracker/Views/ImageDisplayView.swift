@@ -32,44 +32,49 @@
 
 import SwiftUI
 
-struct ActionButtonsView: View {
+struct ImageDisplayView: View {
   @Binding var image: UIImage?
-  var classifyImage: () -> Void
-  var reset: () -> Void
+  @Binding var showSourceTypeActionSheet: Bool
 
   var body: some View {
-    VStack(spacing: 10) {
-      if image != nil {
-        Button(action: classifyImage) {
-          Text("Detect Emotion")
-            .font(.headline)
-            .padding()
-            .frame(maxWidth: .infinity)
-            .background(Color.blue)
-            .foregroundColor(.white)
-            .cornerRadius(10)
+    Group {
+      if let image = image {
+        Image(uiImage: image)
+          .resizable()
+          .scaledToFit()
+          .frame(maxWidth: .infinity, maxHeight: 300)
+          .cornerRadius(10)
+          .shadow(radius: 10)
+          .onTapGesture {
+            self.showSourceTypeActionSheet = true
+          }
+          .padding()
+      } else {
+        VStack(spacing: 10) {
+          Image(systemName: "photo.on.rectangle")
+            .resizable()
+            .scaledToFit()
+            .frame(width: 100, height: 100)
+            .foregroundColor(.gray)
+          Text("Tap to Select an Image")
+            .foregroundColor(.gray)
         }
-        .padding(.horizontal)
-
-        Button(action: reset) {
-          Text("Select Another Image")
-            .font(.headline)
-            .padding()
-            .frame(maxWidth: .infinity)
-            .background(Color.red)
-            .foregroundColor(.white)
-            .cornerRadius(10)
+        .frame(maxWidth: .infinity, maxHeight: 300)
+        .background(Color.black.opacity(0.1))
+        .cornerRadius(10)
+        .shadow(radius: 10)
+        .onTapGesture {
+          self.showSourceTypeActionSheet = true
         }
-        .padding(.horizontal)
+        .padding()
       }
     }
   }
 }
 
 #Preview {
-  ActionButtonsView(
-    image: .constant(UIImage(systemName: "photo")),
-    classifyImage: {},
-    reset: {}
+  ImageDisplayView(
+    image: .constant(nil),
+    showSourceTypeActionSheet: .constant(false)
   )
 }

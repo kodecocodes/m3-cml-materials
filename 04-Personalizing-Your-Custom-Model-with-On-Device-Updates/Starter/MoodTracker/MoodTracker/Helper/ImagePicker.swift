@@ -31,45 +31,38 @@
 /// THE SOFTWARE.
 
 import SwiftUI
+import UIKit
 
-struct ActionButtonsView: View {
+struct ImagePicker: UIViewControllerRepresentable {
   @Binding var image: UIImage?
-  var classifyImage: () -> Void
-  var reset: () -> Void
+  @Binding var sourceType: UIImagePickerController.SourceType
+  @Environment(\.presentationMode) var presentationMode
 
-  var body: some View {
-    VStack(spacing: 10) {
-      if image != nil {
-        Button(action: classifyImage) {
-          Text("Detect Emotion")
-            .font(.headline)
-            .padding()
-            .frame(maxWidth: .infinity)
-            .background(Color.blue)
-            .foregroundColor(.white)
-            .cornerRadius(10)
-        }
-        .padding(.horizontal)
+  func makeUIViewController(context: Context) -> UIImagePickerController {
+    let picker = UIImagePickerController()
+    picker.delegate = context.coordinator
+    picker.sourceType = sourceType
+    return picker
+  }
 
-        Button(action: reset) {
-          Text("Select Another Image")
-            .font(.headline)
-            .padding()
-            .frame(maxWidth: .infinity)
-            .background(Color.red)
-            .foregroundColor(.white)
-            .cornerRadius(10)
-        }
-        .padding(.horizontal)
+  func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+
+  func makeCoordinator() -> Coordinator {
+    Coordinator(self)
+  }
+
+  class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+    let parent: ImagePicker
+
+    init(_ parent: ImagePicker) {
+      self.parent = parent
+    }
+
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+      if let uiImage = info[.originalImage] as? UIImage {
+        parent.image = uiImage
       }
+      parent.presentationMode.wrappedValue.dismiss()
     }
   }
-}
-
-#Preview {
-  ActionButtonsView(
-    image: .constant(UIImage(systemName: "photo")),
-    classifyImage: {},
-    reset: {}
-  )
 }

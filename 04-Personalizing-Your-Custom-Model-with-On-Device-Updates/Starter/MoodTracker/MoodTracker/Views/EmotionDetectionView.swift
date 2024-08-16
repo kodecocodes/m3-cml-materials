@@ -32,44 +32,43 @@
 
 import SwiftUI
 
-struct ActionButtonsView: View {
-  @Binding var image: UIImage?
-  var classifyImage: () -> Void
-  var reset: () -> Void
+struct EmotionDetectionView: View {
+    @StateObject private var viewModel = EmotionDetectionViewModel()
+    @State private var isShowingImagePicker = false
+    @State private var sourceType: UIImagePickerController.SourceType = .photoLibrary
+    @State private var showSourceTypeActionSheet = false
 
-  var body: some View {
-    VStack(spacing: 10) {
-      if image != nil {
-        Button(action: classifyImage) {
-          Text("Detect Emotion")
-            .font(.headline)
-            .padding()
-            .frame(maxWidth: .infinity)
-            .background(Color.blue)
-            .foregroundColor(.white)
-            .cornerRadius(10)
-        }
-        .padding(.horizontal)
+    var body: some View {
+        VStack(spacing: 20) {
+            ImageDisplayView(image: $viewModel.image, showSourceTypeActionSheet: $showSourceTypeActionSheet)
 
-        Button(action: reset) {
-          Text("Select Another Image")
-            .font(.headline)
-            .padding()
-            .frame(maxWidth: .infinity)
-            .background(Color.red)
-            .foregroundColor(.white)
-            .cornerRadius(10)
+            if let emotion = viewModel.emotion, let accuracy = viewModel.accuracy {
+                EmotionResultView(emotion: emotion, accuracy: accuracy)
+            }
+
+            ActionButtonsView(image: $viewModel.image, classifyImage: viewModel.classifyImage, reset: viewModel.reset)
         }
-        .padding(.horizontal)
-      }
+        .navigationTitle("Emotion Detection")
+        .actionSheet(isPresented: $showSourceTypeActionSheet) {
+            ActionSheet(title: Text("Select Image Source"), message: nil, buttons: [
+                .default(Text("Camera")) {
+                    self.sourceType = .camera
+                    self.isShowingImagePicker = true
+                },
+                .default(Text("Photo Library")) {
+                    self.sourceType = .photoLibrary
+                    self.isShowingImagePicker = true
+                },
+                .cancel()
+            ])
+        }
+        .sheet(isPresented: $isShowingImagePicker) {
+            ImagePicker(image: self.$viewModel.image, sourceType: self.$sourceType)
+        }
     }
-  }
 }
 
 #Preview {
-  ActionButtonsView(
-    image: .constant(UIImage(systemName: "photo")),
-    classifyImage: {},
-    reset: {}
-  )
+    EmotionDetectionView()
 }
+
