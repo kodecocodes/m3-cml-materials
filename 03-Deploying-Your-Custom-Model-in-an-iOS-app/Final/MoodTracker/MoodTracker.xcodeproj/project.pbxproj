@@ -12,8 +12,8 @@
 		6203C2962C445995008CDF16 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6203C28E2C445995008CDF16 /* Assets.xcassets */; };
 		6203C2972C445995008CDF16 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6203C28F2C445995008CDF16 /* ContentView.swift */; };
 		6203C2992C445995008CDF16 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6203C2922C445995008CDF16 /* LaunchScreen.storyboard */; };
+		6209170D2C675A150039FFCF /* EmotionsImageClassifier.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 6209170C2C675A150039FFCF /* EmotionsImageClassifier.mlmodel */; };
 		620917102C6768FD0039FFCF /* EmotionDetectionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6209170F2C6768FD0039FFCF /* EmotionDetectionViewModel.swift */; };
-		621117ED2C690E22000075B5 /* EmotionsImageClassifier.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 621117EC2C690E22000075B5 /* EmotionsImageClassifier.mlmodel */; };
 		627BC6352C4DAEA8004416B6 /* ImageDisplayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 627BC6342C4DAEA8004416B6 /* ImageDisplayView.swift */; };
 		627BC6372C4DAECB004416B6 /* EmotionResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 627BC6362C4DAECB004416B6 /* EmotionResultView.swift */; };
 		627BC6392C4DAEEF004416B6 /* ActionButtonsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 627BC6382C4DAEEF004416B6 /* ActionButtonsView.swift */; };
@@ -30,8 +30,8 @@
 		6203C28F2C445995008CDF16 /* ContentView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		6203C2902C445995008CDF16 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		6203C2912C445995008CDF16 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		6209170C2C675A150039FFCF /* EmotionsImageClassifier.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; name = EmotionsImageClassifier.mlmodel; path = ../../../EmotionsImageClassifier.mlmodel; sourceTree = "<group>"; };
 		6209170F2C6768FD0039FFCF /* EmotionDetectionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmotionDetectionViewModel.swift; sourceTree = "<group>"; };
-		621117EC2C690E22000075B5 /* EmotionsImageClassifier.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; name = EmotionsImageClassifier.mlmodel; path = ../../../EmotionsImageClassifier.mlmodel; sourceTree = "<group>"; };
 		627BC6342C4DAEA8004416B6 /* ImageDisplayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageDisplayView.swift; sourceTree = "<group>"; };
 		627BC6362C4DAECB004416B6 /* EmotionResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmotionResultView.swift; sourceTree = "<group>"; };
 		627BC6382C4DAEEF004416B6 /* ActionButtonsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionButtonsView.swift; sourceTree = "<group>"; };
@@ -103,7 +103,7 @@
 		6203C29B2C4459AE008CDF16 /* Helper */ = {
 			isa = PBXGroup;
 			children = (
-				621117EC2C690E22000075B5 /* EmotionsImageClassifier.mlmodel */,
+				6209170C2C675A150039FFCF /* EmotionsImageClassifier.mlmodel */,
 				62B0ED622C445BA4004F3AF2 /* EmotionClassifier.swift */,
 				62B0ED642C445C4D004F3AF2 /* ImagePicker.swift */,
 			);
@@ -226,8 +226,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				627BC6352C4DAEA8004416B6 /* ImageDisplayView.swift in Sources */,
-				621117ED2C690E22000075B5 /* EmotionsImageClassifier.mlmodel in Sources */,
 				6203C2952C445995008CDF16 /* AppMain.swift in Sources */,
+				6209170D2C675A150039FFCF /* EmotionsImageClassifier.mlmodel in Sources */,
 				62B0ED692C445CF4004F3AF2 /* EmotionDetectionView.swift in Sources */,
 				62B0ED652C445C4D004F3AF2 /* ImagePicker.swift in Sources */,
 				62B0ED632C445BA4004F3AF2 /* EmotionClassifier.swift in Sources */,
@@ -375,9 +375,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "MoodTracker/Preview\\ Content";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = C4W5KCV4W2;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = MoodTracker/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.5;
@@ -398,9 +398,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "MoodTracker/Preview\\ Content";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = C4W5KCV4W2;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = MoodTracker/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.5;
